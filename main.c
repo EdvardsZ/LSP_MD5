@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include "BestFit/bestfit.h"
 #include "FirstFit/firstfit.h"
 #include "NextFit/nextfit.h"
@@ -20,13 +21,14 @@ struct Block {
     struct Block *next;
     void * address;
     size_t size;
-    bool used;
+    size_t sizeUsed;
 } Block;
 
 struct RequestSizeNode {
     struct RequestSizeNode *next;
     struct RequestSizeNode *prev;
     size_t size;
+    void * address;// adrese uz buferi, kur šis apgabals ticis iedots
     bool successfulAllocation; // Kad meģināsim iegrūst atmiņā nevienmēr izdosies to iegrūst...
 } requestSizeNode;
 
@@ -41,7 +43,7 @@ struct Block *CreateBlock(const size_t size) {
     block->prev = NULL;
     block->next = NULL;
     block->size = size;
-    block->used = false;
+    block->sizeUsed = 0;
     block->address = lastAdress;
     lastAdress+=size;
     return block;
@@ -112,7 +114,7 @@ void readRequestAllocationSizes(const char *sizes) {
 void printChunksInfo() {
     struct Block * temp = headBlock;
     while(temp != NULL) {
-        printf("Block: {size:%zu adress:%zu used:%s}\n",temp->size, (temp->address)-(void *)buffer,  temp->used ? "true":"false");
+        printf("Block: {size:%zu adress:%zu sizeUsed:%zu}\n",temp->size, (temp->address)-(void *)buffer,temp->sizeUsed);
         temp = temp->next;
     }
 
@@ -124,6 +126,43 @@ void printRequestSizesInfo() {
         printf("RequestSizeNode: {size:%zu successfulAllocation:%s}\n",temp->size, temp->successfulAllocation ? "true":"false");
         temp = temp->next;
     }
+}
+
+
+float timedifference_msec(struct timeval t0, struct timeval t1)
+{
+    return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
+}
+
+float allocateAndReturnTime() {
+    struct timeval t0;
+    struct timeval t1;
+    float elapsed;
+
+    gettimeofday(&t0, 0);
+    //Timer start   /// here willl go code for each fit... not done yet
+    struct RequestSizeNode * temp= headSize;
+    while(temp!=NULL) {
+       // firstFit(temp);
+        temp = temp->next;
+    }
+    //Timer end
+    gettimeofday(&t1, 0);
+
+    elapsed = timedifference_msec(t0, t1);
+    return elapsed;
+}
+
+void * firstFit(struct RequestSizeNode ** temp){
+    struct Block * current = headBlock;
+    while(current!=NULL) {
+        if((current->size)-(current->sizeUsed)>=(*temp)->size){
+            current->sizeUsed += (*temp)->size;
+            return current;
+        }
+        current=current->next;
+    }
+    return NULL;
 }
 
 int main(int argc, char *argv[]) {
@@ -151,8 +190,11 @@ int main(int argc, char *argv[]) {
     //-----Nolasīti komandrindas argumenti
     readChunks(chunksFile);// Nolasa chunks un izveido sarakstu
     readRequestAllocationSizes(sizesFile);// Nolasa sizes un izveido sarakstu, jo pēc tam būs vajadzīgs saglabāt informāciju par katru pieprasījumu
+    //-----Dati ir nolasīti no faila
+    float time = allocateAndReturnTime();
     #if DEBUG
     printChunksInfo();
     printRequestSizesInfo();
     #endif
+    return 0;
 }
