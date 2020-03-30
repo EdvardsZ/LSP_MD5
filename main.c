@@ -138,10 +138,10 @@ void * firstFit(struct RequestSizeNode ** temp){
     struct Block * current = headBlock;
     while(current!=NULL) {
         if(((current->size)-(current->sizeUsed))>=(*temp)->size){
-            current->sizeUsed += (*temp)->size;
-            (*temp)->address=current->address;
-            current->address += (*temp)->size;
-            (*temp)->successfulAllocation = true;
+            current->sizeUsed += (*temp)->size;// pieskaita atmiņu cik izmanto
+            (*temp)->address=current->address;// iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
+            current->address += (*temp)->size;// pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
+            (*temp)->successfulAllocation = true;// ieraksta, ka attiecīgais request ir izdevies
             return current;
         }
         current=current->next;
@@ -155,10 +155,10 @@ float allocateAndReturnTime() {
     float elapsed;
 
     gettimeofday(&t0, 0);
-    //Timer start   /// here willl go code for each fit... not done yet
+    //Timer start   /// 
     struct RequestSizeNode * temp= headSize;
     while(temp!=NULL) {
-        firstFit(&temp);
+        firstFit(&temp);// here willl go code for each fit
         temp = temp->next;
     }
     //Timer end
