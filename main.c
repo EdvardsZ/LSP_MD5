@@ -23,7 +23,6 @@ struct Block {
     size_t size;
     size_t sizeUsed;
 } Block;
-
 struct RequestSizeNode {
     struct RequestSizeNode *next;
     struct RequestSizeNode *prev;
@@ -81,6 +80,7 @@ struct RequestSizeNode * CreateRequestSizeNode(const size_t size) {
     sizeNode->prev = NULL;
     sizeNode->next = NULL;
     sizeNode->size = size;
+    sizeNode->address= NULL;
     sizeNode->successfulAllocation = false;
     return sizeNode;
 }
@@ -139,7 +139,9 @@ void * firstFit(struct RequestSizeNode ** temp){
     while(current!=NULL) {
         if(((current->size)-(current->sizeUsed))>=(*temp)->size){
             current->sizeUsed += (*temp)->size;
+            (*temp)->address=current->address;
             current->address += (*temp)->size;
+            (*temp)->successfulAllocation = true;
             return current;
         }
         current=current->next;
