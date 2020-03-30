@@ -134,6 +134,19 @@ float timedifference_msec(struct timeval t0, struct timeval t1)
     return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
 }
 
+void * firstFit(struct RequestSizeNode ** temp){
+    struct Block * current = headBlock;
+    while(current!=NULL) {
+        if(((current->size)-(current->sizeUsed))>=(*temp)->size){
+            current->sizeUsed += (*temp)->size;
+            current->address += (*temp)->size;
+            return current;
+        }
+        current=current->next;
+    }
+    return NULL;
+}
+
 float allocateAndReturnTime() {
     struct timeval t0;
     struct timeval t1;
@@ -143,26 +156,15 @@ float allocateAndReturnTime() {
     //Timer start   /// here willl go code for each fit... not done yet
     struct RequestSizeNode * temp= headSize;
     while(temp!=NULL) {
-       // firstFit(temp);
+        firstFit(&temp);
         temp = temp->next;
     }
     //Timer end
+
     gettimeofday(&t1, 0);
 
     elapsed = timedifference_msec(t0, t1);
     return elapsed;
-}
-
-void * firstFit(struct RequestSizeNode ** temp){
-    struct Block * current = headBlock;
-    while(current!=NULL) {
-        if((current->size)-(current->sizeUsed)>=(*temp)->size){
-            current->sizeUsed += (*temp)->size;
-            return current;
-        }
-        current=current->next;
-    }
-    return NULL;
 }
 
 int main(int argc, char *argv[]) {
