@@ -251,13 +251,13 @@ int main(int argc, char *argv[]) {
     //-----Nolasīti komandrindas argumenti
     readChunks(chunksFile);// Nolasa chunks un izveido sarakstu
     float beginnigFragmentation = getFragmentation();
-    readRequestAllocationSizes(sizesFile);// Nolasa sizes un izveido sarakstu, jo pēc tam būs vajadzīgs saglabāt informāciju par katru pieprasījumu
+    readRequestAllocationSizes(sizesFile);// Nolasa sizes un izveido sarakstu
     //-----Dati ir nolasīti no faila
     float time = allocateAndReturnTime();
     #if DEBUG
     printChunksInfo();
     printRequestSizesInfo();
-    printf("Time:%f\n",time);
+    printf("Time: %f\n",time);
     printf("Total requested memory:%lu\n",totalRequestedMemory());
     printf("Total aquired memory %lu\n", totalAllocatedMemory());
     printf("Total fragmenation before:%f\n", beginnigFragmentation);
