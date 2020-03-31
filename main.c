@@ -129,15 +129,14 @@ void printRequestSizesInfo() {
 }
 
 
-float timedifference_msec(struct timeval t0, struct timeval t1)
-{
+float timedifference_msec(struct timeval t0, struct timeval t1) {
     return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
 }
 
-void * firstFit(struct RequestSizeNode ** temp){
+void * firstFit(struct RequestSizeNode ** temp) {
     struct Block * current = headBlock;
     while(current!=NULL) {
-        if(((current->size)-(current->sizeUsed)) >= (*temp)->size){
+        if(((current->size)-(current->sizeUsed)) >= (*temp)->size) {
             current->sizeUsed += (*temp)->size;// pieskaita atmiņu cik izmanto
             (*temp)->address=current->address;// iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
             current->address += (*temp)->size;// pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
@@ -149,7 +148,9 @@ void * firstFit(struct RequestSizeNode ** temp){
     return NULL;
 }
 
-unsigned long totalRequestedMemory(){
+
+
+unsigned long totalRequestedMemory() {
     struct RequestSizeNode * current = headSize;
     unsigned long total = 0;
     while(current!=NULL){
@@ -161,7 +162,7 @@ unsigned long totalRequestedMemory(){
 
 unsigned long totalAllocatedMemory() {
     struct RequestSizeNode * current = headSize;
-    unsigned long totalAllocatedMemory=0;
+    unsigned long totalAllocatedMemory = 0;
     while(current!=NULL){
         if(current->successfulAllocation == true) {
             totalAllocatedMemory += current->size;
@@ -191,6 +192,40 @@ float allocateAndReturnTime() {
     return elapsed;
 }
 
+float getFragmentation() {// Vienkāršākais frag. noteikšanas veids - ja pietiks laiks uztaisīšu ko krutāku
+    size_t free = 0;
+    size_t freeMax = 0;
+    struct Block * current = headBlock;
+
+    while(current!=NULL) {
+        size_t blockFree = current->size - current->sizeUsed;
+        if(blockFree>freeMax){
+            freeMax = blockFree;
+        }
+        free += blockFree;
+        current = current -> next;
+    }
+    size_t freeDif = free - freeMax;
+    
+    return (float) freeDif / free * 100;
+}
+void reinitialize(){
+    struct Block * current = headBlock;
+    lastAdress=buffer;
+    while(current != NULL) {
+        current->address = lastAdress;
+        current->sizeUsed = 0;
+        lastAdress += current->size;
+        current = current->next;
+    }
+    struct RequestSizeNode * temp = headSize;
+    while(temp != NULL) {
+        temp->address = NULL;
+        temp->successfulAllocation = false;
+        temp = temp->next;
+    }
+}
+
 int main(int argc, char *argv[]) {
     int option;
     char chunksFile[256];
@@ -215,15 +250,18 @@ int main(int argc, char *argv[]) {
     }
     //-----Nolasīti komandrindas argumenti
     readChunks(chunksFile);// Nolasa chunks un izveido sarakstu
-    readRequestAllocationSizes(sizesFile);// Nolasa sizes un izveido sarakstu, jo pēc tam būs vajadzīgs saglabāt informāciju par katru pieprasījumu
+    float beginnigFragmentation = getFragmentation();
+    readRequestAllocationSizes(sizesFile);// Nolasa sizes un izveido sarakstu
     //-----Dati ir nolasīti no faila
     float time = allocateAndReturnTime();
     #if DEBUG
     printChunksInfo();
     printRequestSizesInfo();
-    printf("Time:%f\n",time);
+    printf("Time: %f\n",time);
     printf("Total requested memory:%lu\n",totalRequestedMemory());
     printf("Total aquired memory %lu\n", totalAllocatedMemory());
+    printf("Total fragmenation before:%f\n", beginnigFragmentation);
+    printf("Total fragmentation after:%f\n", getFragmentation());
     #endif
     return 0;
 }
