@@ -131,7 +131,7 @@ void printRequestSizesInfo() {
 
 float timedifference_msec(struct timeval t0, struct timeval t1)
 {
-    return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
+    return (t1.tv_sec - t0.tv_sec)* 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
 }
 
 void * firstFit(struct RequestSizeNode ** temp){
@@ -142,9 +142,52 @@ void * firstFit(struct RequestSizeNode ** temp){
             (*temp)->address=current->address;// iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
             current->address += (*temp)->size;// pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
             (*temp)->successfulAllocation = true;// ieraksta, ka attiecīgais request ir izdevies
-            return current;
+            return current; // Kāda jēga šim? //kārlis
         }
         current=current->next;
+    }
+    return NULL;
+}
+
+//Next fit is a modified version of ‘first fit’. It begins as the first fit to find a free partition but when called next time it starts searching from where it
+//left off, not from the beginning. 
+void * nextfit(void){
+    struct Block * lastAllocBlock = headBlock;  //initially no block has been the last to have been allocated
+    struct Block * current = headBlock; //start from the beginning of available chunks
+    struct RequestSizeNode * tempSize = headSize;
+    bool looped = false; 
+            printf("%ld \n", headBlock->address); 
+         printf("%ld \n", lastAllocBlock->address); 
+                 printf("%ld \n", current->address); 
+
+    if(looped && lastAllocBlock->address == current->address ) printf("XD \n");
+    while(tempSize != NULL){ //iterate through the sizes list
+
+        while(!looped || (current->address != lastAllocBlock->address)) { // while current blocks adress is not the adress
+            printf("%d \n", looped); 
+            if(current == NULL && lastAllocBlock != NULL){ //handles starting from head again
+                current = headBlock;
+                looped = true;
+            }
+            if(((current->size)-(current->sizeUsed))>=tempSize->size){
+                current->sizeUsed += tempSize->size;// pieskaita atmiņu cik izmanto
+                tempSize->address=current->address;//
+                current->address += tempSize->size;//
+                tempSize->successfulAllocation = true;// ieraksta, ka attiecīgais request ir izdevies
+                
+                //marks current block as lastAllocatedBlock, moves the list of sizes forward, breaks loop
+                lastAllocBlock = current;
+                break;
+            }
+            current=current->next;
+        }
+        tempSize = tempSize->next;
+        current = lastAllocBlock;
+        // if(current->address == lastAllocBlock->address){
+        //     printf("yay \n");
+        // }
+
+        looped = false;
     }
     return NULL;
 }
@@ -156,11 +199,13 @@ float allocateAndReturnTime() {
 
     gettimeofday(&t0, 0);
     //Timer start   /// 
-    struct RequestSizeNode * temp= headSize;
-    while(temp!=NULL) {
-        firstFit(&temp);// here willl go code for each fit
-        temp = temp->next;
-    }
+    struct RequestSizeNode * tempSize= headSize;
+    // while(temp!=NULL) {
+    //     firstFit(&temp);// here willl go code for each fit
+    //     temp = temp->next;
+    // }
+    nextfit();
+
     //Timer end
 
     gettimeofday(&t1, 0);
