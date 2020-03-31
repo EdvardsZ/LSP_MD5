@@ -197,13 +197,6 @@ void * worstFit(struct RequestSizeNode ** temp) {
     return NULL;    
 }
 
-void * nextFit(struct RequestSizeNode ** temp) {
-    static struct Block * current;
-    if (current == NULL) {
-        current = CreateBlock(5);
-    }
-}
-
 float allocateAndReturnTime() {
     struct timeval t0;
     struct timeval t1;
