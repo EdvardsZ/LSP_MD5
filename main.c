@@ -158,25 +158,50 @@ void * bestFit(struct RequestSizeNode ** temp) {
             (*temp)->address = current->address;  // iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
             current->address += (*temp)->size;    // pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
             (*temp)->successfulAllocation = true; // ieraksta, ka attiecīgais request ir izdevies
-            return current;
+            return NULL;
         }
         else if (((current->size) - (current->sizeUsed)) > (*temp)->size) { // atrodam lielaaku ?
-            if (best->size > current->size) { // vai tas ir labaaks par sobriid labaako ?
+            if (best->size > current->size - current->sizeUsed) { // vai tas ir labaaks par sobriid labaako ?
                 best = current; // jauns labaakais
             }            
         }        
         current=current->next;
     }
-     if (best->size == __INT_MAX__) {
-         return NULL; // neizdevaas atrast  briivo bloku
-     }
-     else {
-        best->sizeUsed += (*temp)->size;   // pieskaita atmiņu cik izmanto
-        (*temp)->address = best->address;  // iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
-        best->address += (*temp)->size;    // pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
-        (*temp)->successfulAllocation = true; // ieraksta, ka attiecīgais request ir izdevies
-         return best;
-     }         
+    
+    if (best->size != __INT_MAX__) {          // atradam briivo bloku?
+        best->sizeUsed += (*temp)->size;      // pieskaita atmiņu cik izmanto
+        (*temp)->address = best->address;     // iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
+        best->address += (*temp)->size;       // pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
+        (*temp)->successfulAllocation = true; // ieraksta, ka attiecīgais request ir izdevies                
+    }
+    return NULL;
+}
+
+void * worstFit(struct RequestSizeNode ** temp) {
+    struct Block * current = headBlock;
+    struct Block * worst = CreateBlock(0);
+    while (current != NULL) {        
+        if (((current->size) - (current->sizeUsed)) >= (*temp)->size) { // atrodam lielaaku ?
+            if (worst->size < current->size - current->sizeUsed) { // vai tas ir labaaks par sobriid labaako ?
+                worst = current; // jauns labaakais
+            }            
+        }        
+        current=current->next;
+    }
+    if (worst->size > 0) {                     // atradam briivo bloku?
+        worst->sizeUsed += (*temp)->size;      // pieskaita atmiņu cik izmanto
+        (*temp)->address = worst->address;     // iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
+        worst->address += (*temp)->size;       // pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
+        (*temp)->successfulAllocation = true;  // ieraksta, ka attiecīgais request ir izdevies
+    }
+    return NULL;    
+}
+
+void * nextFit(struct RequestSizeNode ** temp) {
+    static struct Block * current;
+    if (current == NULL) {
+        current = CreateBlock(5);
+    }
 }
 
 float allocateAndReturnTime() {
@@ -188,7 +213,9 @@ float allocateAndReturnTime() {
     //Timer start   /// 
     struct RequestSizeNode * temp= headSize;
     while(temp!=NULL) {
-        bestFit(&temp);
+        //nextFit(&temp);
+        worstFit(&temp);
+        //bestFit(&temp);
         //firstFit(&temp);// here willl go code for each fit
         temp = temp->next;
     }
