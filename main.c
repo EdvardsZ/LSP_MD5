@@ -44,7 +44,7 @@ struct Block *CreateBlock(const size_t size) {
     block->size = size;
     block->sizeUsed = 0;
     block->address = lastAdress;
-    lastAdress+=size;
+    lastAdress += size;
     return block;
 }
 
@@ -137,7 +137,7 @@ float timedifference_msec(struct timeval t0, struct timeval t1)
 void * firstFit(struct RequestSizeNode ** temp){
     struct Block * current = headBlock;
     while(current!=NULL) {
-        if(((current->size)-(current->sizeUsed))>=(*temp)->size){
+        if(((current->size)-(current->sizeUsed)) >= (*temp)->size){
             current->sizeUsed += (*temp)->size;// pieskaita atmiņu cik izmanto
             (*temp)->address=current->address;// iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
             current->address += (*temp)->size;// pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
@@ -147,6 +147,28 @@ void * firstFit(struct RequestSizeNode ** temp){
         current=current->next;
     }
     return NULL;
+}
+
+unsigned long totalRequestedMemory(){
+    struct RequestSizeNode * current = headSize;
+    unsigned long total = 0;
+    while(current!=NULL){
+        total += current->size;
+        current = current->next;
+    }
+    return total;
+}
+
+unsigned long totalAllocatedMemory() {
+    struct RequestSizeNode * current = headSize;
+    unsigned long totalAllocatedMemory=0;
+    while(current!=NULL){
+        if(current->successfulAllocation == true) {
+            totalAllocatedMemory += current->size;
+        }
+        current = current->next;
+    }
+    return totalAllocatedMemory;
 }
 
 float allocateAndReturnTime() {
@@ -184,7 +206,7 @@ int main(int argc, char *argv[]) {
             case 's':
                 strcpy(sizesFile,optarg);
                 sizes= true;
-                break;   
+                break;
         }
     }
     if(!chunks || !sizes){
@@ -199,6 +221,9 @@ int main(int argc, char *argv[]) {
     #if DEBUG
     printChunksInfo();
     printRequestSizesInfo();
+    printf("Time:%f\n",time);
+    printf("Total requested memory:%lu\n",totalRequestedMemory());
+    printf("Total aquired memory %lu\n", totalAllocatedMemory());
     #endif
     return 0;
 }
