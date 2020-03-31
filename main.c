@@ -162,7 +162,7 @@ unsigned long totalRequestedMemory() {
 
 unsigned long totalAllocatedMemory() {
     struct RequestSizeNode * current = headSize;
-    unsigned long totalAllocatedMemory=0;
+    unsigned long totalAllocatedMemory = 0;
     while(current!=NULL){
         if(current->successfulAllocation == true) {
             totalAllocatedMemory += current->size;
@@ -208,6 +208,22 @@ float getFragmentation() {// Vienkāršākais frag. noteikšanas veids - ja piet
     size_t freeDif = free - freeMax;
     
     return (float) freeDif / free * 100;
+}
+void reinitialize(){
+    struct Block * current = headBlock;
+    lastAdress=buffer;
+    while(current != NULL) {
+        current->address = lastAdress;
+        current->sizeUsed = 0;
+        lastAdress += current->size;
+        current = current->next;
+    }
+    struct RequestSizeNode * temp = headSize;
+    while(temp != NULL) {
+        temp->address = NULL;
+        temp->successfulAllocation = false;
+        temp = temp->next;
+    }
 }
 
 int main(int argc, char *argv[]) {
