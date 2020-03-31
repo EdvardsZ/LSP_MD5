@@ -142,7 +142,7 @@ void * firstFit(struct RequestSizeNode ** temp){
             (*temp)->address=current->address;// iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
             current->address += (*temp)->size;// pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
             (*temp)->successfulAllocation = true;// ieraksta, ka attiecīgais request ir izdevies
-            return current;
+            return (*temp)->address;
         }
         current=current->next;
     }
