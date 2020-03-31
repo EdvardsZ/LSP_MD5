@@ -149,6 +149,36 @@ void * firstFit(struct RequestSizeNode ** temp){
     return NULL;
 }
 
+void * bestFit(struct RequestSizeNode ** temp) {
+    struct Block * current = headBlock;
+    struct Block * best = CreateBlock(__INT_MAX__);
+    while (current != NULL) {
+        if (((current->size) - (current->sizeUsed)) == (*temp)->size) { // ja atrodam vienaadu, automatiski pats labaakais variants, uzreiz atgriezam
+            current->sizeUsed += (*temp)->size;   // pieskaita atmiņu cik izmanto
+            (*temp)->address = current->address;  // iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
+            current->address += (*temp)->size;    // pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
+            (*temp)->successfulAllocation = true; // ieraksta, ka attiecīgais request ir izdevies
+            return current;
+        }
+        else if (((current->size) - (current->sizeUsed)) > (*temp)->size) { // atrodam lielaaku ?
+            if (best->size > current->size) { // vai tas ir labaaks par sobriid labaako ?
+                best = current; // jauns labaakais
+            }            
+        }        
+        current=current->next;
+    }
+     if (best->size == __INT_MAX__) {
+         return NULL; // neizdevaas atrast  briivo bloku
+     }
+     else {
+        best->sizeUsed += (*temp)->size;   // pieskaita atmiņu cik izmanto
+        (*temp)->address = best->address;  // iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
+        best->address += (*temp)->size;    // pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
+        (*temp)->successfulAllocation = true; // ieraksta, ka attiecīgais request ir izdevies
+         return best;
+     }         
+}
+
 float allocateAndReturnTime() {
     struct timeval t0;
     struct timeval t1;
@@ -158,7 +188,8 @@ float allocateAndReturnTime() {
     //Timer start   /// 
     struct RequestSizeNode * temp= headSize;
     while(temp!=NULL) {
-        firstFit(&temp);// here willl go code for each fit
+        bestFit(&temp);
+        //firstFit(&temp);// here willl go code for each fit
         temp = temp->next;
     }
     //Timer end
