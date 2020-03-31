@@ -10,7 +10,7 @@
 #include "WorstFit/worstfit.h"
 
 #define BUFFER_SIZE 1024
-#define DEBUG 1
+#define DEBUG 0
 
 unsigned char buffer[BUFFER_SIZE];
 
@@ -233,7 +233,6 @@ void * nextFit(struct RequestSizeNode ** tempSize){
     }
     struct Block * lastAllocBlock = current;
     bool looped = false;
-
     while(!looped || (current->address != lastAllocBlock->address)) { // while current blocks adress is not the adress 
         if(current == NULL && lastAllocBlock != NULL){ //handles starting from head again
             current = headBlock;
@@ -254,8 +253,6 @@ void * nextFit(struct RequestSizeNode ** tempSize){
     }
     return NULL;
 }
-
-
 
 unsigned long totalRequestedMemory() {
     struct RequestSizeNode * current = headSize;
@@ -279,21 +276,15 @@ unsigned long totalAllocatedMemory() {
     return totalAllocatedMemory;
 }
 
-float allocateAndReturnTime() {
+float allocateAndReturnTime(void * (*f)(struct RequestSizeNode **)) {
     struct timeval t0;
     struct timeval t1;
     float elapsed;
-
     gettimeofday(&t0, 0);
     //Timer start   /// 
     struct RequestSizeNode * temp= headSize;
     while(temp!=NULL) {
-
-        //nextFit(&temp);
-        worstFit(&temp);
-        //bestFit(&temp);
-        //firstFit(&temp);// here willl go code for each fit
-
+        (*f)(&temp);
         temp = temp->next;
     }
 
@@ -338,7 +329,7 @@ void reinitialize(){
         temp = temp->next;
     }
 }
-
+void * (*func_ptr[4])(struct RequestSizeNode **) = {bestFit, worstFit, firstFit, nextFit};
 int main(int argc, char *argv[]) {
     int option;
     char chunksFile[256];
@@ -363,18 +354,27 @@ int main(int argc, char *argv[]) {
     }
     //-----Nolasīti komandrindas argumenti
     readChunks(chunksFile);// Nolasa chunks un izveido sarakstu
-    float beginnigFragmentation = getFragmentation();
     readRequestAllocationSizes(sizesFile);// Nolasa sizes un izveido sarakstu
+    for(int i=0; i<4; i++) {
+        float time = allocateAndReturnTime(func_ptr[i]);// 0 - bestfit 1- worstfit, 2 firstfit, 3 nextfit
+            if(func_ptr[i]==bestFit)
+            printf("\n-------BestFit----------\n");
+            if(func_ptr[i]==worstFit)
+            printf("-------WorstFit----------\n");
+            if(func_ptr[i]==firstFit)
+            printf("-------FirstFit----------\n");
+            if(func_ptr[i]==nextFit)
+            printf("-------NextFit----------\n");
+            printf("Time: %f\n",time);
+            printf("Total requested memory:%lu\n",totalRequestedMemory());
+            printf("Total aquired memory %lu\n", totalAllocatedMemory());
+            printf("Total fragmentation:%f %%\n\n", getFragmentation());
+        reinitialize();
+    }
     //-----Dati ir nolasīti no faila
-    float time = allocateAndReturnTime();
     #if DEBUG
     printChunksInfo();
     printRequestSizesInfo();
-    printf("Time: %f\n",time);
-    printf("Total requested memory:%lu\n",totalRequestedMemory());
-    printf("Total aquired memory %lu\n", totalAllocatedMemory());
-    printf("Total fragmenation before:%f\n", beginnigFragmentation);
-    printf("Total fragmentation after:%f\n", getFragmentation());
     #endif
     return 0;
 }
