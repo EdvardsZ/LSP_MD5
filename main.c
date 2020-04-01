@@ -165,7 +165,7 @@ void * bestFit(struct RequestSizeNode ** temp) {
                 best = current; // jauns labaakais
             }            
         }        
-        current=current->next;
+        current = current->next;
     }
     
     if (best->size != __INT_MAX__) {          // atradam briivo bloku?
@@ -186,7 +186,7 @@ void * worstFit(struct RequestSizeNode ** temp) {
                 worst = current; // jauns labaakais
             }            
         }        
-        current=current->next;
+        current = current->next;
     }
     if (worst->size > 0) {                     // atradam briivo bloku?
         worst->sizeUsed += (*temp)->size;      // pieskaita atmiņu cik izmanto
@@ -196,60 +196,27 @@ void * worstFit(struct RequestSizeNode ** temp) {
     }
     return NULL;  
 }
-//Next fit is a modified version of ‘first fit’. It begins as the first fit to find a free partition but when called next time it starts searching from where it
-//left off, not from the beginning. 
-// void * nextfit(struct RequestSizeNode ** tempSize){
-//     // if(lastAllocBlock != NULL){
-//         static struct Block * lastAllocBlock = headBlock;  //initially no block has been the last to have been allocated
-//     // }    
-//     struct Block * current = lastAllocBlock; //start from the beginning of available chunks
-//     bool looped = false; 
 
-//     while(!looped || (current->address != lastAllocBlock->address)) { // while current blocks adress is not the adress
-//         printf("%d \n", looped); 
-//         if(current == NULL && lastAllocBlock != NULL){ //handles starting from head again
-//             current = headBlock;
-//             looped = true;
-//         }
-//         if(((current->size)-(current->sizeUsed))>=(*tempSize)->size){
-//             current->sizeUsed += (*tempSize)->size;// pieskaita atmiņu cik izmanto
-//             (*tempSize)->address=current->address;//
-//             current->address += (*tempSize)->size;//
-//             (*tempSize)->successfulAllocation = true;// ieraksta, ka attiecīgais request ir izdevies
-            
-//             //marks current block as lastAllocatedBlock, moves the list of sizes forward, breaks loop
-//             lastAllocBlock = current;
-//         break;
-//         }
-//         current=current->next;
-//     }
-//     return NULL;
-// }
-
-void * nextFit(struct RequestSizeNode ** tempSize){
+void * nextFit(struct RequestSizeNode ** tempSize) {
     static struct Block * current;
-    if(current == NULL){
+    bool looped = false;
+    if (current == NULL) {
         current = headBlock;
     }
-    struct Block * lastAllocBlock = current;
-    bool looped = false;
-    while(!looped || (current->address != lastAllocBlock->address)) { // while current blocks adress is not the adress 
-        if(current == NULL && lastAllocBlock != NULL){ //handles starting from head again
-            current = headBlock;
+    struct Block * lastAllocBlock = current;    
+    while (!looped || current->address != lastAllocBlock->address) { // kamēr neapejam pilno apli     
+        if (((current->size) - (current->sizeUsed)) >= (*tempSize)->size) { // atradam briivo bloku?
+            current->sizeUsed += (*tempSize)->size;   // pieskaita atmiņu cik izmanto
+            (*tempSize)->address = current->address;  // iedod attiecīgajam requestam adresi( lai pēc tam varētu piekļūt)
+            current->address += (*tempSize)->size;    // pieskaita blokam adresi (lai tas atkal norādītu uz tukšu vietu)
+            (*tempSize)->successfulAllocation = true; // ieraksta, ka attiecīgais request ir izdevies                        
+            return NULL;
+        }
+        current = current->next;
+        if (current == NULL) {
+            current = headBlock;        
             looped = true;
         }
-        if(((current->size)-(current->sizeUsed))>=(*tempSize)->size){
-            current->sizeUsed += (*tempSize)->size;// pieskaita atmiņu cik izmanto
-            (*tempSize)->address=current->address;//
-            current->address += (*tempSize)->size;//
-            (*tempSize)->successfulAllocation = true;// ieraksta, ka attiecīgais request ir izdevies
-            
-            //marks current block as lastAllocatedBlock, moves the list of sizes forward, breaks loop
-            lastAllocBlock = current;
-            break;
-
-        }
-        current=current->next;
     }
     return NULL;
 }
